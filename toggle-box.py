@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 import time
+import requests
+
 from board import SCL, SDA
 import busio
 from adafruit_neotrellis.neotrellis import NeoTrellis
@@ -20,6 +22,10 @@ GREEN = (0, 255, 0)
 CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
+
+#Toggl Authorisation Goes Here
+AUTH = "Toggle Authorisation Code"
+
 
 # some clients to test
 CLIENTS = [
@@ -49,10 +55,33 @@ def blink(event):
     if event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == False:
         trellis.pixels[event.number] = CLIENTS[event.number][2]
         ON[event.number] = True
+
+        # This starts a timer
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        data = '{"time_entry":{"description":"Meeting with possible clients","tags":["billed"],"created_with":"curl"}}'
+
+        response = requests.post('https://api.track.toggl.com/api/v8/time_entries/start', headers=headers, data=data, auth=(AUTH, 'api_token'))
+
+        print(response)
+
+        id = response.json()['data']['id']
+
+
     elif event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == True:
         trellis.pixels[event.number] = OFF
         ON[event.number] = False
 
+        #This stops a timer after finding the id of the one just started
+        headers = {
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.put((f'https://api.track.toggl.com/api/v8/time_entries/{id}/stop'), headers=headers, auth=(AUTH, 'api_token'))
+
+        print(response)
 
 
 for i in range(16):
@@ -76,3 +105,11 @@ while True:
     trellis.sync()
     # the trellis can only be read every 17 millisecons or so
     time.sleep(0.02)
+
+
+
+
+
+
+
+
