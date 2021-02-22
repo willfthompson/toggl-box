@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
 
 import time
 import requests
@@ -24,13 +22,13 @@ BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 
 #Toggl Authorisation Goes Here
-AUTH = "Toggle Authorisation Code"
+AUTH = "REDACTED"
 
 
 # some clients to test
 CLIENTS = [
 ["Admin", 160033931,RED],
-["Admin", 160033931,YELLOW],
+["Baby Duet", 161637546,YELLOW],
 ["Admin", 160033931,GREEN],
 ["Admin", 160033931,CYAN],
 ["Admin", 160033931,BLUE],
@@ -48,11 +46,22 @@ CLIENTS = [
 ]
 
 ON = [False] * 16
+id = 0
 
 # this will be called when button events are received
 def blink(event):
+    global id
     # turn the LED on when a rising edge is detected
     if event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == False:
+        # Check for already running timers
+        if True in ON:
+            trellis.pixels[ON.index(True)] = OFF
+            ON[ON.index(True)] = False
+            headers = {
+            'Content-Type': 'application/json',
+            }
+            requests.put((f'https://api.track.toggl.com/api/v8/time_entries/{id}/stop'), headers=headers, auth=(f'{AUTH}', 'api_token'))
+        # Turn on the correct light and start the timer       
         trellis.pixels[event.number] = CLIENTS[event.number][2]
         ON[event.number] = True
 
@@ -61,14 +70,13 @@ def blink(event):
             'Content-Type': 'application/json',
         }
 
-        data = '{"time_entry":{"description":"Meeting with possible clients","tags":["billed"],"created_with":"curl"}}'
-
-        response = requests.post('https://api.track.toggl.com/api/v8/time_entries/start', headers=headers, data=data, auth=(AUTH, 'api_token'))
-
-        print(response)
-
+        data = '''{"time_entry":{"description":"Meeting with possible clients",
+        "tags":["billed"],
+        "pid":"%s",
+        "created_with":"curl"}}'''%(CLIENTS[event.number][1])
+                   
+        response = requests.post('https://api.track.toggl.com/api/v8/time_entries/start', headers=headers, data=data, auth=(f'{AUTH}', 'api_token'))
         id = response.json()['data']['id']
-
 
     elif event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == True:
         trellis.pixels[event.number] = OFF
@@ -78,11 +86,9 @@ def blink(event):
         headers = {
             'Content-Type': 'application/json',
         }
+        requests.put((f'https://api.track.toggl.com/api/v8/time_entries/{id}/stop'), headers=headers, auth=(f'{AUTH}', 'api_token'))
 
-        response = requests.put((f'https://api.track.toggl.com/api/v8/time_entries/{id}/stop'), headers=headers, auth=(AUTH, 'api_token'))
-
-        print(response)
-
+      
 
 for i in range(16):
     # activate rising edge events on all keys
@@ -105,11 +111,4 @@ while True:
     trellis.sync()
     # the trellis can only be read every 17 millisecons or so
     time.sleep(0.02)
-
-
-
-
-
-
-
 
