@@ -67,6 +67,7 @@ def defaulttag(e):
 
 #Will be called when a timer stop needs to be sent to Toggl
 def stoptimer(e):
+    global id
     trellis.pixels[e] = OFF
     ON[e] = False
     headers = {
@@ -75,6 +76,7 @@ def stoptimer(e):
     requests.put((f'https://api.track.toggl.com/api/v8/time_entries/{id}/stop'), headers=headers, auth=(f'{AUTH}', 'api_token'))
 
 def starttimer(e,t):
+    global id
     trellis.pixels[e] = CLIENTS[e][2]
     
     # This starts a timer
