@@ -22,28 +22,28 @@ BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 
 #Toggl Authorisation Goes Here
-AUTH = "Your Auth code"
+AUTH = "Your Auth Code"
 
 # Up to 12 Clients can be used. But all buttons must be filled
 CLIENTS = [
-["name", 0000000000, (255,0,0)],
-["name", 000000000, (255,127,0)],
-["name", 000000000, (255,255,0)],
-["name", 00000000, (0,255,0)],
-["name", 00000000, (0,149,77)],
-["name", 00000000, (45,200,77)],
-["name", 00000000,(7,175,212)],
-["name", 00000000,(0,0,255)],
-["name", 00000000, (0,0,255)],
-["name", 00000000, (224,60,49)],
-["name", 00000000, (176,8,143)],
-["name", 00000000,(255,188,0)],
+["name", pid goes here, (255,0,0)],
+["name", pid goes here, (255,127,0)],
+["name", pid goes here, (255,255,0)],
+["name", pid goes here, (0,255,0)],
+["name", pid goes here, (0,149,77)],
+["name", pid goes here, (45,200,77)],
+["name", pid goes here,(7,175,212)],
+["name", pid goes here,(0,0,255)],
+["name", pid goes here, (0,0,255)],
+["name", pid goes here, (224,60,49)],
+["name", pid goes here, (176,8,143)],
+["name", pid goes here,(255,188,0)],
 # The last 4 buttons are assigned to tags which do not carry an ID
 ["Admin", 0, (255,255,255)],
 ["Planning", 0, (255,255,255)],
 ["Meetings & Calls", 0, (255,255,255)],
 ["Doing", 0,(255,255,255)],
-# Final element is a Default tag can be customised as desired.
+# Final element is a Default tag can be customised as desired. This will be attached when no tag is chosen
 [""]
 ]
 
@@ -78,7 +78,7 @@ def stoptimer(e):
 def starttimer(e,t):
     global id
     trellis.pixels[e] = CLIENTS[e][2]
-    
+
     # This starts a timer
     headers = {
         'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ def starttimer(e,t):
     "tags":["%s"],
     "pid":"%s",
     "created_with":"toggl-box"}}'''%(CLIENTS[t][0] ,CLIENTS[e][1])
-                         
+
     response = requests.post('https://api.track.toggl.com/api/v8/time_entries/start', headers=headers, data=data, auth=(f'{AUTH}', 'api_token'))
     if response.ok:
         ON[e] = True
@@ -96,12 +96,12 @@ def starttimer(e,t):
     else:
         print(response.status_code)
         flash(e)
-    
+
 # this will be called when button events are received
 def blink(event):
     global id
     global tag
-    
+
     # Button is for a tag
     if event.edge == NeoTrellis.EDGE_RISING and event.number > 11:
         if True in ON:
@@ -119,8 +119,8 @@ def blink(event):
                 tag = event.number
                 # Set correct color for Tag
                 trellis.pixels[event.number] = CLIENTS[event.number][2]
-    #Button is for a project       
-    else:    
+    #Button is for a project
+    else:
         # if  button is not already on
         if event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == False:
             # Check for already running timers
@@ -129,7 +129,7 @@ def blink(event):
             starttimer(event.number, tag)
         elif event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == True:
             stoptimer(event.number)
-            defaulttag(tag) 
+            defaulttag(tag)
 
 for i in range(16):
     # activate rising edge events on all keys
