@@ -54,16 +54,16 @@ tag = 16
 
 # this will be called on incorrect inputs to flash the requested button at the assigned color
 def flash(e):
-    for i in range(3):
-        trellis.pixels[e] = CLIENTS[e][2]
-        time.sleep(0.1)
-        trellis.pixels[e] = OFF
-        time.sleep(0.1)
+    trellis.pixels[e] = CLIENTS[e][2]
+    time.sleep(0.05)
+    trellis.pixels[e] = OFF
+    time.sleep(0.05)
 
 #This will be called when the tag should be reset to default
 def defaulttag(e):
-    tag = 16
+    global tag
     trellis.pixels[e] = OFF
+    tag = 16
 
 #Will be called when a timer stop needs to be sent to Toggl
 def stoptimer(e):
@@ -104,8 +104,19 @@ def blink(event):
 
     # Button is for a tag
     if event.edge == NeoTrellis.EDGE_RISING and event.number > 11:
+        #Timer is running
         if True in ON:
-            flash(event.number)
+            stoptimer(ON.index(True))
+            # Pressing same tag again
+            if tag == event.number:
+                flash(event.number)
+                trellis.pixels[event.number] = CLIENTS[event.number][2]
+            # A new tag
+            else:
+                trellis.pixels[tag] = OFF
+                tag = event.number
+                trellis.pixels[event.number] = CLIENTS[event.number][2]
+        #Timer is NOT running
         else:
             # Check if current tag is being turned off
             if tag == event.number:
@@ -121,12 +132,14 @@ def blink(event):
                 trellis.pixels[event.number] = CLIENTS[event.number][2]
     #Button is for a project
     else:
-        # if  button is not already on
+        # if this timer is NOT running
         if event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == False:
-            # Check for already running timers
+            # Check for other running timers
             if True in ON:
                 stoptimer(ON.index(True))
+                defaulttag(tag)
             starttimer(event.number, tag)
+        # if this timer is running
         elif event.edge == NeoTrellis.EDGE_RISING and ON[event.number] == True:
             stoptimer(event.number)
             defaulttag(tag)
@@ -153,6 +166,3 @@ while True:
     trellis.sync()
     # the trellis can only be read every 17 millisecons or so
     time.sleep(0.02)
-
-
-
